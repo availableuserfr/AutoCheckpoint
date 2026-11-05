@@ -1,6 +1,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
 #include <Geode/modify/PlayerObject.hpp>
+#include <Geode/modify/UILayer.hpp>
 #include "./PauseButton.cpp"
 #include <chrono>
 
@@ -66,10 +67,14 @@ class $modify(PlayLayer)
 
 		placeCheckpointNextFrame = false;
 	}
+};
 
-	void removeLastCheckpoint()
+class $modify(UILayer)
+{
+	// runs when you tap the remove checkpoint button
+	void onDeleteCheckpoint(CCObject* sender)
 	{
-		PlayLayer::removeLastCheckpoint();
+		UILayer::onDeleteCheckpoint(sender);
 		lastRemove = std::chrono::high_resolution_clock::now();
 		waitingAfterRemove = true;
 		placeCheckpointNextFrame = false;
@@ -103,13 +108,6 @@ class $modify(PlayerObject)
 			placeCheckpointNextFrame = true;
 	}
 
-	//void rotateGameplay(int p0, int p1, bool p2, float p3, float p4, bool p5, bool p6)
-	//{
-	//	PlayerObject::rotateGameplay(p0, p1, p2, p3, p4, p5, p6);
-	//	if (Mod::get()->getSettingValue<bool>("rotate"))
-	//		placeCheckpointNextFrame = true;
-	//}
-
 	void flipGravity(bool upsideDown, bool somethingThatsAlwaysFalse)
 	{
 		PlayerObject::flipGravity(upsideDown, somethingThatsAlwaysFalse);
@@ -119,7 +117,6 @@ class $modify(PlayerObject)
 
 	void update(float dt)
 	{
-		// shit before the update
 		float speed = this->m_playerSpeed;
 		float size = this->m_vehicleSize;
 		
