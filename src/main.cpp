@@ -20,6 +20,10 @@ bool placeCheckpointNextFrame = false;
 
 auto lastChk = std::chrono::high_resolution_clock::now();
 
+// removal delay
+auto lastRemove = std::chrono::high_resolution_clock::now();
+bool waitingAfterRemove = false;
+
 class $modify(PlayLayer)
 {
 	// this needs to be placed here so that there's a reference to a PlayLayer
@@ -29,14 +33,26 @@ class $modify(PlayLayer)
 		if (!this->m_isPracticeMode) return;
 		if (!Mod::get()->getSettingValue<bool>("enabled")) return;
 
-		// see if it's been some amount of seconds
 		auto now = std::chrono::high_resolution_clock::now();
+
+		// after removing a checkpoint, wait 1 second before placing another
+		if (waitingAfterRemove)
+		{
+			auto sinceRemove = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastRemove).count();
+			if (sinceRemove < 1000)
+			{
+				placeCheckpointNextFrame = false;
+				return;
+			}
+		}
+
 		// difference between now and last checkpoint time (seconds)
 		auto diff = std::chrono::duration_cast<std::chrono::seconds>(now - lastChk).count();
 
 		if (placeCheckpointNextFrame && diff >= Mod::get()->getSettingValue<double>("min-delay") && !this->m_player1->m_isDashing)
 		{
 			lastChk = std::chrono::high_resolution_clock::now();
+			waitingAfterRemove = false;
 			PlayLayer::markCheckpoint();
 		}
 
@@ -44,9 +60,18 @@ class $modify(PlayLayer)
 		{
 			log::info("been too long! ({})", std::to_string(diff));
 			lastChk = std::chrono::high_resolution_clock::now();
+			waitingAfterRemove = false;
 			PlayLayer::markCheckpoint();
 		}
 
+		placeCheckpointNextFrame = false;
+	}
+
+	void removeLastCheckpoint()
+	{
+		PlayLayer::removeLastCheckpoint();
+		lastRemove = std::chrono::high_resolution_clock::now();
+		waitingAfterRemove = true;
 		placeCheckpointNextFrame = false;
 	}
 };
